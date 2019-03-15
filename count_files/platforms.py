@@ -1,7 +1,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, List
 from collections import Counter
 try:
     import ctypes
@@ -9,7 +9,7 @@ except:
     pass
 
 from count_files.settings import TERM_WIDTH
-from count_files.utils.file_handlers import get_file_extension
+from count_files.utils.file_handlers import get_file_extension, check_pattern_matching
 
 
 class BaseOS(object):
@@ -39,12 +39,15 @@ class BaseOS(object):
         """
         return False
 
-    def search_files(self, dirpath: str, extension: str, recursive: bool = True,
+    def search_files(self, dirpath: str, extension: str, contains: List[str] = None, recursive: bool = True,
                      include_hidden: bool = False, case_sensitive: bool = False) -> Iterable[str]:
         """Find all files in a given directory with and without the extension.
 
         :param dirpath: full/path/to/folder
         :param extension: extension name (txt, py), '.'(without extension) or '..' (all extensions)
+        :param contains: example ['substring', 'filename', 'startswith']
+        substring to search in file path, where to search - 'path', 'filename' or 'extension',
+        pattern type - 'startswith', 'endswith', 'contains'
         :param recursive: True(default) or False
         :param include_hidden: False -> exclude hidden, True -> include hidden, counting all files
         :param case_sensitive: False -> ignore case in extensions,
@@ -52,10 +55,16 @@ class BaseOS(object):
         :return: object <class 'generator'> with full paths to all found files
         """
         # this part used for -fe .. or -t .. (all extensions)
+        # -pc/-fc/-ec substring (find_group)
         if extension == '..':
             for root, dirs, files in os.walk(dirpath):
                 for f in files:
                     f_path = os.path.join(root, f)
+                    if contains:
+                        if not check_pattern_matching(file_name=f, file_path=f_path,
+                                                      pattern_type=contains[2], substring=contains[0],
+                                                      case_sensitive=case_sensitive, where=contains[1]):
+                            continue
                     if not os.path.isfile(f_path):
                         continue
                     if include_hidden or not self.is_hidden_file_or_dir(f_path):
