@@ -26,13 +26,13 @@ from typing import TypeVar, Union
 from pathlib import Path
 from textwrap import fill
 
-from count_files.utils.file_handlers import is_supported_filetype
+from count_files.utils.file_handlers import is_supported_filetype, get_pattern_substring_and_type, handle_groups
 from count_files.utils.viewing_modes import show_2columns, show_start_message, \
     show_result_for_total, show_result_for_search_files
 from count_files.platforms import get_current_os
 from count_files.settings import SUPPORTED_TYPE_INFO_MESSAGE, NOT_SUPPORTED_TYPE_MESSAGE, \
-    DEFAULT_PREVIEW_SIZE, START_TEXT_WIDTH
-from count_files.utils.help_system_extension import search_in_help
+    DEFAULT_PREVIEW_SIZE, START_TEXT_WIDTH, SUPPORTED_PATTERN_MESSAGE, WARNING
+from count_files.utils.help_system_extension import search_in_help, print_help_text
 from count_files.utils.help_text import topics
 from count_files.utils.decorators import exceptions_decorator
 
@@ -56,6 +56,10 @@ parser.add_argument('-v', '--version', action='version', version=__import__('cou
 parser.add_argument('-st', '--supported-types', action='store_true',
                     help=topics['supported-types']['short'])
 
+parser.add_argument('-fp', '--find-patterns', action='store_true',
+                    help=topics['find-patterns']['short'])
+
+
 parser.add_argument('path', nargs='?', default=os.getcwd(), type=str,
                     help=topics['path']['short'])
 
@@ -73,7 +77,6 @@ parser.add_argument('-nf', '--no-feedback', action='store_true', default=False,
 
 parser.add_argument('-ah', '--args-help', type=str, dest='topic',
                     help=topics['args-help']['short'])
-
 
 total_group = parser.add_argument_group('Total number of files'.upper(),
                                         description=topics['total-group']['short'])
@@ -102,6 +105,18 @@ search_group.add_argument('-ps', '--preview-size', type=int, default=DEFAULT_PRE
 
 search_group.add_argument('-fs', '--file-sizes', action='store_true', default=False,
                           help=topics['file-sizes']['short'])
+
+find_group = parser.add_argument_group('Find substring in a path, file name or extension'.upper(),
+                                       description=topics['find-group']['short'])
+
+# now simply checking x in string, but may accept list of substrings
+# group arguments are used separately from each other
+find_group.add_argument('-pc', '--path-contains', type=str, dest='path_substring',
+                        help=topics['path-contains']['short'])
+find_group.add_argument('-fc', '--filename-contains', type=str, dest='filename_substring',
+                        help=topics['filename-contains']['short'])
+find_group.add_argument('-ec', '--extension-contains', type=str, dest='extension_substring',
+                        help=topics['extension-contains']['short'])
 
 parser._positionals.title = parser._positionals.title.upper()
 parser._optionals.title = parser._optionals.title.upper()
@@ -135,8 +150,9 @@ def main_flow(*args: [argparse_namespace_object, Union[bytes, str]]):
         include_hidden = True
 
     if args.supported_types:
-        parser.exit(status=0, message=SUPPORTED_TYPE_INFO_MESSAGE)
-
+        parser.exit(status=0, message=print_help_text(SUPPORTED_TYPE_INFO_MESSAGE))
+    if args.find_patterns:
+        parser.exit(status=0, message=print_help_text(SUPPORTED_PATTERN_MESSAGE))
     if args.topic:
         search_in_help(args.topic)
         parser.exit(status=0)
@@ -161,73 +177,68 @@ def main_flow(*args: [argparse_namespace_object, Union[bytes, str]]):
                                           f' has hidden folders.\n'
                                           f'Use the --all argument to include hidden files and folders.')
 
-    # Parser total_group
+    common_args = dict(dirpath=location, include_hidden=include_hidden,
+                       recursive=recursive, case_sensitive=args.case_sensitive)
+    show_result_for_search_args = dict(file_sizes=args.file_sizes, preview=args.preview,
+                                       preview_size=args.preview_size)
+    groups_args = [extension, args.extension,
+                   args.path_substring, args.filename_substring, args.extension_substring]
+    # 0(count) or 1(others)
+    if len([arg for arg in groups_args if arg is not None]) > 1:
+        parser.exit(status=1, message=print_help_text(WARNING))
+
+    # Parser find_group: search for any folder, file of extension name in path
+    find_group_args = any([args.path_substring, args.filename_substring, args.extension_substring])
+    if find_group_args:
+        kw = {'path': args.path_substring, 'filename': args.filename_substring, 'extension': args.extension_substring}
+        substring, where = handle_groups(kw)
+        pattern_type, substring = get_pattern_substring_and_type(substring)
+        print(fill(show_start_message(value='..', group='find', contains=[substring, where, pattern_type], **common_args),
+                   width=START_TEXT_WIDTH),
+              end="\n\n")
+        data = current_os.search_files(extension='..', contains=[substring, where, pattern_type], **common_args)
+        # display the result as a list
+        len_files = show_result_for_search_files(files=data, **show_result_for_search_args)
+        return len_files
+
+    # Parser total_group:
     # getting the total number of files for -t .. (all extensions), -t . and -t extension_name
     print("")
     if args.extension:
-        print(fill(show_start_message(args.extension, args.case_sensitive, recursive,
-                                      include_hidden, location, 'total'),
+        print(fill(show_start_message(value=args.extension, group='total', **common_args),
                    width=START_TEXT_WIDTH),
               end="\n\n")
-
-        data = current_os.search_files(dirpath=location,
-                                       extension=args.extension,
-                                       include_hidden=include_hidden,
-                                       recursive=recursive,
-                                       case_sensitive=args.case_sensitive)
+        data = current_os.search_files(extension=args.extension, **common_args)
         total_result = show_result_for_total(data, args.no_feedback)
         return total_result
 
-    # Parser search_group
-    # search and list files by extension
+    # Parser search_group: search and list files by extension
     if extension:
-        print(fill(show_start_message(extension, args.case_sensitive, recursive, include_hidden, location),
-                   width=START_TEXT_WIDTH),
-              end="\n\n")
-
         # list of all found file paths - enabled by default,
         # optional: information about file sizes, file preview, size specification for file preview
         if args.preview:
             if extension == '.' or not is_supported_filetype(extension.lower()):
-                parser.exit(status=1, message=NOT_SUPPORTED_TYPE_MESSAGE)
+                parser.exit(status=1, message=print_help_text(NOT_SUPPORTED_TYPE_MESSAGE))
 
+        print(fill(show_start_message(value=extension, **common_args), width=START_TEXT_WIDTH), end="\n\n")
         # getting data list for -fe .. (all extensions), -fe . and -fe extension_name
-        data = (f for f in current_os.search_files(dirpath=location,
-                                                   extension=extension,
-                                                   include_hidden=include_hidden,
-                                                   recursive=recursive,
-                                                   case_sensitive=args.case_sensitive))
-
+        data = (f for f in current_os.search_files(extension=extension, **common_args))
         # display the result as a list
-        len_files = show_result_for_search_files(files=data,
-                                                 file_sizes=args.file_sizes,
-                                                 preview=args.preview,
-                                                 preview_size=args.preview_size)
-
+        len_files = show_result_for_search_files(files=data, **show_result_for_search_args)
         return len_files
 
-    # Parser count_group
-    # counting all files by extension
-    print(fill(show_start_message(None, args.case_sensitive, recursive, include_hidden, location),
-               width=START_TEXT_WIDTH),
-          end="\n\n"
-          )
-    data = current_os.count_files_by_extension(dirpath=location,
-                                               no_feedback=args.no_feedback,
-                                               include_hidden=include_hidden,
-                                               recursive=recursive,
-                                               case_sensitive=args.case_sensitive)
+    # Parser count_group: counting all files by extension
+    print(fill(show_start_message(value=None, **common_args), width=START_TEXT_WIDTH), end="\n\n")
 
-    # display the result as a table
-    
+    data = current_os.count_files_by_extension(no_feedback=args.no_feedback, **common_args)
     # if empty sequence
     if not data:
-        print("Oops! We have no data to show...\n")
-        parser.exit(status=0)
+        parser.exit(status=0, message="Oops! We have no data to show...\n")
         
     total_occurrences = sum(data.values())
     max_word_width = max(map(len, data.keys()))
 
+    # display the result as a table
     if sort_alpha:
         # sort extensions alphabetically, with uppercase versions on top
         sort_key = lambda data: (data[0].casefold(), data[0])
