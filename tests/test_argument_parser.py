@@ -12,6 +12,27 @@ class TestArgumentParser(unittest.TestCase):
     def get_locations(self, *args):
         return os.path.normpath(os.path.join(os.path.dirname(__file__), *args))
 
+    # searching by pattern with include_hidden=True(suitable for all operation systems), found group
+    def test_path_contains_argument(self):
+        self.assertEqual(main_flow([self.get_locations(), '-pc', 'os_file', '-a']), 1)
+        self.assertEqual(main_flow([self.get_locations(), '-pc', '2columns', '-a']), 8)
+        self.assertEqual(main_flow([self.get_locations(), '-pc', 'cprofile_test.py', '-a']), 1)
+        # little faster than -fe, but less accurate
+        self.assertEqual(main_flow([self.get_locations('data_for_tests'), '-pc', '.TXT', '-c', '-a']), 1)
+
+    def test_extension_contains_argument(self):
+        self.assertEqual(main_flow([self.get_locations('data_for_tests'), '-ec', '*j*', '-a']), 1)
+        self.assertEqual(main_flow([self.get_locations('data_for_tests'), '-ec', '*X*', '-a', '-c']), 1)
+        self.assertEqual(main_flow([self.get_locations('data_for_tests'), '-ec', 'm*', '-a']), 2)
+        self.assertEqual(main_flow([self.get_locations('data_for_tests'), '-ec', '*tml', '-a']), 1)
+
+    def test_filename_contains_argument(self):
+        self.assertEqual(main_flow([self.get_locations('data_for_tests'), '-fc', '*no_extension*', '-a']), 1)
+        self.assertEqual(main_flow([self.get_locations('data_for_tests'), '-fc', '*_ext', '-a']), 1)
+        self.assertEqual(main_flow([self.get_locations('data_for_tests'), '-fc', '*_EXT', '-a', '-c']), 0)
+        self.assertEqual(main_flow([self.get_locations('data_for_tests'), '-fc', 'ext_*', '-a']), 2)
+        self.assertEqual(main_flow([self.get_locations('data_for_tests'), '-fc', 'html_file', '-a']), 1)
+
     # counting total number of files
     def test_countfiles_all_t(self):
         """Testing def main_flow.
