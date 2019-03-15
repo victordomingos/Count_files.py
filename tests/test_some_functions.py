@@ -4,7 +4,6 @@ import os
 import sys
 from collections import Counter
 
-from count_files.utils.file_handlers import get_file_extension
 from count_files.platforms import get_current_os
 from count_files.utils.file_preview import generate_preview, generic_text_preview
 
@@ -16,21 +15,6 @@ class TestSomeFunctions(unittest.TestCase):
 
     def get_locations(self, *args):
         return os.path.normpath(os.path.join(os.path.dirname(__file__), *args))
-
-    def test_get_file_extension(self):
-        """Testing def get_file_extension.
-
-        Extract only the file extension from a given path.
-        Expected behavior: return extension name (txt, py) or '.' (for files without extension)
-        :return:
-        """
-        extensions_dict = {'file.py': 'py', '.gitignore': '.', 'image.JPG': 'JPG',
-                           'file': '.', '.hidden_file.txt': 'txt',
-                           '.hidden.file.txt': 'txt', 'select2.3805311d5fc1.css.gz': 'gz'
-                           }
-        for k, v in extensions_dict.items():
-            with self.subTest(k=k, v=v):
-                self.assertEqual(get_file_extension(k, case_sensitive=True), v)
 
     # test case_sensitive param (search, count, total)
     def test_search_files_case_sensitive(self):
