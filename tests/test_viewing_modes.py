@@ -143,17 +143,25 @@ class TestViewingModes(unittest.TestCase):
         :return:
         """
         count = show_start_message(value=None, case_sensitive=False, recursive=True, include_hidden=False,
-                                   location='/some/path', group=None)
+                                   dirpath='/some/path', group=None)
         search = show_start_message(value='.', case_sensitive=False, recursive=False, include_hidden=False,
-                                    location='/some/path', group=None)
+                                    dirpath='/some/path', group=None)
         total = show_start_message(value='TXT', case_sensitive=True, recursive=True, include_hidden=True,
-                                   location='/some/path', group='total')
+                                   dirpath='/some/path', group='total')
+        find = show_start_message(value='..', case_sensitive=True, recursive=True, include_hidden=True,
+                                  dirpath='/some/path', group='find', contains=['abc', 'path', 'contains'])
+        find1 = show_start_message(value='..', case_sensitive=False, recursive=False, include_hidden=False,
+                                   dirpath='/some/path', group='find', contains=['def', 'filename', 'endswith'])
         self.assertEqual(count, 'Recursively counting all files, '
                                 'ignoring hidden files and directories, in /some/path')
         self.assertEqual(search, 'Searching files without any extension, '
                                  'ignoring hidden files and directories, in /some/path')
         self.assertEqual(total, 'Recursively counting total number of files with (case-sensitive) extension .TXT, '
                                 'including hidden files and directories, in /some/path')
+        self.assertEqual(find, 'Recursively searching for paths that contain the substring "abc" '
+                               '(case-sensitive), including hidden files and directories, in /some/path')
+        self.assertEqual(find1, 'Searching for filenames that ends with the substring "def" '
+                                '(case-insensitive), ignoring hidden files and directories, in /some/path')
 
     def test_show_help_columns(self):
         arguments = ['12345', '12345', '12345', '12345']
