@@ -20,7 +20,9 @@ Partial argument name if it consists of two words.
 
 Sorting arguments by purpose:
 Service arguments: display of help, version of the program etc.
-(h or help, ah or args-help, v or version, st or supported-types)
+(h or help, ah or args-help,
+v or version, st or supported-types,
+sp or search-patterns)
 All service arguments.
     count-files --args-help service
 Get by name.
@@ -36,7 +38,9 @@ Get by name.
 Special arguments: arguments for counting or searching files.
 Count by extension: alpha or sort-alpha;
 Total number of files: t or total;
-Search by extension: fe or file-extension, fs or file-sizes, p or preview, ps or preview-size.
+Search by extension: fe or file-extension, fs or file-sizes, p or preview, ps or preview-size;
+Find substring in file paths: pc or path-contains, fc or filename-contains, ec or extension-contains
+(also file-sizes, preview and preview-size are used with this group).
 All special arguments.
     count-files --args-help special
 Get by name.
@@ -50,9 +54,10 @@ Sorting arguments by group, including group description:
     count-files --args-help count
     count-files --args-help search
     count-files --args-help total
+    count-files --args-help find
 
 Get group description:
-(count-group or cg, search-group or sg, total-group or tg)
+(count-group or cg, search-group or sg, total-group or tg, find-group or fg)
     count-files --args-help count-group
     count-files --args-help tg
 
@@ -95,7 +100,7 @@ Search by short/long argument name:
     count-files --args-help st
     count-files --args-help supported-types
 Sorting arguments by group, including group description:
-(count, search or total)
+(count, search, total or find)
     count-files --args-help count
 
 ADDITIONAL SECTIONS:
@@ -122,8 +127,11 @@ arguments = [
              'path', 'path',
              # optional
              'all', 'a', 'args-help', 'ah',
-             'case-sensitive', 'c', 'file-extension', 'fe', 'file-sizes', 'fs',
+             'case-sensitive', 'c', 'extension-contains', 'ec',
+             'file-extension', 'fe', 'file-sizes', 'fs',
+             'filename-contains', 'fc',
              'help', 'h', 'no-feedback', 'nf', 'no-recursion', 'nr',
+             'path-contains', 'pc',
              'preview', 'p', 'preview-size', 'ps',
              'sort-alpha', 'alpha', 'supported-types', 'st', 'total', 't', 'version', 'v']
 
@@ -158,7 +166,8 @@ AVAILABLE SORT WORDS:
 
 SORTING ARGUMENTS BY PURPOSE:
 Service arguments: display of help, version of the program etc.
-(h or help, ah or args-help, v or version, st or supported-types)
+(h or help, ah or args-help, v or version,
+st or supported-types, sp or search-patterns)
     count-files --args-help service
 Common arguments: directory path and sorting settings that are common to search and count.
 (path, a or all, c or case-sensitive, nr or no-recursion, nf or no-feedback)
@@ -166,7 +175,9 @@ Common arguments: directory path and sorting settings that are common to search 
 Special arguments: arguments for counting or searching files.
 Count by extension: alpha or sort-alpha;
 Total number of files: t or total;
-Search by extension: fe or file-extension, fs or file-sizes, p or preview, ps or preview-size.
+Search by extension: fe or file-extension, fs or file-sizes, p or preview, ps or preview-size;
+Find substring in file paths: pc or path-contains, fc or filename-contains, ec or extension-contains
+(also file-sizes, preview and preview-size are used with this group).
     count-files --args-help special
 
 SORTING ARGUMENTS BY TYPE:
@@ -181,6 +192,7 @@ group_names = [
     'cg, count-group', 'count',
     'sg, search-group', 'search',
     'tg, total-group', 'total',
+    'fg, find-group', 'find',
     # all group descriptions
     'group'
 ]
@@ -196,8 +208,10 @@ Sorting arguments by group, including group description.
     count-files --args-help count
     count-files --args-help search
     count-files --args-help total
+    count-files --args-help find
 Get group description.
-(count-group or cg, search-group or sg, total-group or tg)
+(count-group or cg, search-group or sg,
+total-group or tg, find-group or fg)
     count-files --args-help count-group
     count-files --args-help tg
 Get all group descriptions.
@@ -244,9 +258,9 @@ topics = {
     },
     'args-help': {
         'name': '-ah TOPIC, --args-help TOPIC',
-        'short': 'Search in help by topic - argument or group name(count, search, total). '
+        'short': 'Search in help by topic - argument or group name(count, search, total, find). '
                  'Show more detailed help text: count-files -ah docs.',
-        'long': 'Search in help by topic - argument or group name(count, search, total). '
+        'long': 'Search in help by topic - argument or group name(count, search, total, find). '
                  'Show more detailed help text: count-files -ah docs. '
                  'Show list of available topics: count-files -ah list. '
                  'Usage: count-files -ah <topic>.'
@@ -262,6 +276,15 @@ topics = {
         'short': 'The list of currently supported file types for preview.',
         'long': 'Show a list of currently supported file types for preview and exit. '
                 'Usage: count-files -st or count-files --supported-types.'
+    },
+    'find-patterns': {
+        'name': '-fp, --find-patterns',
+        'short': 'Show examples of currently supported patterns for searching '
+                 'for a substring in a path, file name or extension.',
+        'long': 'Show examples of currently supported patterns for searching '
+                'for a substring in a path, file name or extension. '
+                'Search with substitute character "*" that means "any number of any characters". '
+                'Usage: count-files -fp or count-files --find-patterns.'
     },
     'path': {
         'name': 'path',
@@ -322,21 +345,24 @@ topics = {
                 'you can use the -t or --total argument and specify the name of the extension. '
                 'Usage: count-files [-a, --all] [-c, --case-sensitive] '
                 '[-nr, --no-recursion] [-nf, --no-feedback] '
-                '[-t EXTENSION, --total EXTENSION] [path].'
+                '[-t EXTENSION, --total EXTENSION] [path]. '
+                'EXTENSION: exact name of the extension, '
+                '"."(files without an extension), ".."(all the files).'
     },
     'total': {
         'name': '-t EXTENSION, --total EXTENSION',
         'short': 'Get the total number of files with given extension in the directory. '
-                 'As the extension name: use a single dot "." for files without an extension '
-                 'or two dots ".." for all the files, regardless of the extension.',
+                 'EXTENSION: exact name of the extension, '
+                 '"."(files without an extension), ".."(all the files).',
         'long': 'Get the total number of files in the directory. '
                 'If you only need the total number of all files, '
                 'or the number of files with a certain extension or without it. '
-                'To count the total number of files, you must specify the name of the extension. '
-                'Example: count-files --total txt ~/Documents <arguments>. '
+                'EXTENSION: exact name of the extension, '
+                '"."(files without an extension), ".."(all the files).'
+                'Example with exact name: count-files --total txt ~/Documents <arguments>. '
                 'Use a single dot "." to get the total number of files that do not have an extension. '
                 'Example: count-files --total . ~/Documents <arguments>. '
-                'Use two dots without spaces ".." to get the total number of files, with or without a file extension. '
+                'Use two dots without spaces ".." to get the total number of all files. '
                 'Example: count-files --total .. ~/Documents <arguments>. '
     },
     'count-group': {
@@ -366,7 +392,7 @@ topics = {
         'name': 'File searching by extension',
         'short': 'Searching for files that have a given extension. '
                  'By default, it presents a simple list with full file paths. '
-                 'Optionally, it may also display a short text preview for each found file.',
+                 'Optionally, it may also display a short text preview and size for each found file.',
         'long': 'Searching for files that have a given extension. '
                 'This utility can be used to search for files that have a certain file extension '
                 '(using -fe or --file-extension) and, optionally, '
@@ -380,15 +406,20 @@ topics = {
                 'use the -fs or --file-sizes argument. '
                 'Usage: count-files [-a, --all] [-c, --case-sensitive] '
                 '[-nr, --no-recursion] [-fe FILE_EXTENSION, --file-extension FILE_EXTENSION] '
-                '[-fs, --file-sizes] [-p, --preview] [-ps PREVIEW_SIZE, --preview-size PREVIEW_SIZE] [path].'
+                '[-fs, --file-sizes] [-p, --preview] '
+                '[-ps PREVIEW_SIZE, --preview-size PREVIEW_SIZE] [path]. '
+                'FILE_EXTENSION: exact name of the extension, '
+                '"."(files without an extension), ".."(all the files).'
     },
     'file-extension': {
         'name': '-fe FILE_EXTENSION, --file-extension FILE_EXTENSION',
         'short': 'Searching and listing files by given extension in the directory. '
-                 'As the extension name: use a single dot "." for files without an extension '
-                 'or two dots ".." for all the files, regardless of the extension.',
+                 'FILE_EXTENSION: exact name of the extension, '
+                 '"."(files without an extension), ".."(all the files).',
         'long': 'Searching and listing files by extension. Specify the extension name. '
-                'Example: count-files --file-extension txt ~/Documents <arguments>. '
+                'FILE_EXTENSION: exact name of the extension, '
+                '"."(files without an extension), ".."(all the files). '
+                'Example with exact name: count-files --file-extension txt ~/Documents <arguments>. '
                 'Use a single dot "." to search for files without any extension. '
                 'Files with names such as .gitignore, Procfile, _netrc '
                 'are considered to have no extension in their name. '
@@ -430,6 +461,95 @@ topics = {
                 'found file when using -fe or --file_extension. '
                 'Additional information: total combined size and average file size. '
                 'Example: count-files --file-extension txt --file-sizes ~/Documents <arguments>.'
+    },
+    'find-group': {
+        'name': 'Find substring in a path, file name(excluding extension) or extension',
+        'short': 'Displays the location of the files matching the search pattern. '
+                 'Also --preview, --preview-size, --file-sizes arguments are available for this group. '
+                 'All arguments in the group are used separately from each other. '
+                 'Details: count-files --args-help find',
+        'long': 'Find substring in a path, file name(excluding extension) or extension. '
+                'Displays the location of the files matching the search pattern, '
+                'full paths of the files found. '
+                'All arguments in the group are used separately from each other. '
+                'Available search patterns: substring*, *substring, *substring* or simply substring '
+                '(startswith, endswith or contains substring). '
+                'Examples: count-files --path-contains tests <arguments>; '
+                'count-files --filename-contains urls <arguments>; '
+                'count-files --extension-contains j <arguments>. '
+                'Examples of usage with substitute character "*" '
+                'that means "any number of any characters": '
+                'count-files --path-contains *.css.gz* <arguments>; '
+                'count-files --filename-contains test_* <arguments>; '
+                'count-files --extension-contains *at <arguments>. '
+                'Search for "*" itself: count-files --path-contains * (starts with "*"); '
+                'count-files --path-contains ** (ends with "*"); '
+                'count-files --path-contains *** (contains one "*"). '
+                'Search for substring is case insensitive by default. '
+                'You can use the --case-sensitive argument. '
+                'Also --preview, --preview-size, --file-sizes arguments are available for this group. '
+                'Usage: count-files [-a, --all] [-c, --case-sensitive] '
+                '[-nr, --no-recursion] [-fs, --file-sizes] '
+                '[-p, --preview] [-ps PREVIEW_SIZE, --preview-size PREVIEW_SIZE] '
+                '[-pc PATH_SUBSTRING, --path-contains PATH_SUBSTRING] '
+                '[-fc FILENAME_SUBSTRING, --filename-contains FILENAME_SUBSTRING] '
+                '[-ec EXTENSION_SUBSTRING, --extension-contains EXTENSION_SUBSTRING] '
+                '[path]. '
+                'SUBSTRING: any character or word to check if the file path contains it. '
+                'The substring to search for may contain some special characters inside (sub.str*ing). '
+                'In this case character simply means the character itself. '
+                'Some characters may have special meaning for the terminal. '
+                'If the substring to search for contains them or spaces, you need to specify it in quotes.'
+    },
+    'path-contains': {
+        'name': '-pc PATH_SUBSTRING, --path-contains PATH_SUBSTRING',
+        'short': 'Find substring in paths. For example, any folder or filename. '
+                 'Details: count-files -ah pc',
+        'long': 'Displays the location of the files matching the search pattern. '
+                'Example: count-files --path-contains tests <arguments> '
+                'returns paths with subdirectory or file name that contain substring "tests". '
+                'Example of usage with substitute character "*" '
+                'that means "any number of any characters": '
+                'count-files --path-contains k* <arguments> returns any path that starts with "k". '
+                'Available search patterns: substring*, *substring, *substring* or simply substring '
+                '(startswith, endswith or contains substring). '
+                'Search for substring is case insensitive by default. '
+                'You can use the --case-sensitive argument. '
+                'PATH_SUBSTRING: any character or word to check if the path contains it.'
+    },
+    'filename-contains': {
+        'name': '-fc FILENAME_SUBSTRING, --filename-contains FILENAME_SUBSTRING',
+        'short': 'Find substring in file names(excluding extension). For example, full or partial file name. '
+                 'Details: count-files -ah fc',
+        'long': 'Displays the location of the files matching the search pattern. '
+                'For example, full or partial file name(excluding extension). '
+                'Example: count-files --filename-contains 2019_03 <arguments> '
+                'returns 2019_03_14, file_2019_03, 2019_03. '
+                'Example of usage with substitute character "*" '
+                'that means "any number of any characters": '
+                'count-files --filename-contains *settings <arguments> returns '
+                'any filename that ends with "settings" - local_settings, settings. '
+                'Available search patterns: substring*, *substring, *substring* or simply substring '
+                '(startswith, endswith or contains substring). '
+                'Search for substring is case insensitive by default. '
+                'You can use the --case-sensitive argument. '
+                'FILENAME_SUBSTRING: any character or word to check if the filename contains it.'
+    },
+    'extension-contains': {
+        'name': '-ec EXTENSION_SUBSTRING, --extension-contains EXTENSION_SUBSTRING',
+        'short': 'Find substring in extensions. For example, partial extension name. '
+                 'Details: count-files -ah ec',
+        'long': 'Displays the location of the files matching the search pattern. '
+                'Example: count-files --extension-contains htm <arguments> returns .html, .htm, .xhtml. '
+                'Example of usage with substitute character "*" '
+                'that means "any number of any characters": '
+                'count-files --extension-contains py* <arguments> returns '
+                'any extension that starts with "py" - .py, .pyc. '
+                'Available search patterns: substring*, *substring, *substring* or simply substring '
+                '(startswith, endswith or contains substring). '
+                'Search for substring is case insensitive by default. '
+                'You can use the --case-sensitive argument. '
+                'EXTENSION_SUBSTRING: any character or word to check if the extension contains it.'
     }
 }
 
@@ -444,7 +564,8 @@ indexes = {
         [topics['version']['name'], topics['version']['short'], topics['version']['long']],
     ('st', 'supported-types', 'supported', 'types', 'service', 'optional'):
         [topics['supported-types']['name'], topics['supported-types']['short'], topics['supported-types']['long']],
-
+    ('fp', 'find-patterns', 'find', 'patterns', 'service', 'optional'):
+        [topics['find-patterns']['name'], topics['find-patterns']['short'], topics['find-patterns']['long']],
     ('path', 'common', 'positional'):
         [topics['path']['name'], topics['path']['short'], topics['path']['long']],
     ('a', 'all', 'common', 'optional'):
@@ -475,7 +596,18 @@ indexes = {
     ('ps', 'preview-size', 'preview', 'size', 'search', 'special', 'optional'):
         [topics['preview-size']['name'], topics['preview-size']['short'], topics['preview-size']['long']],
     ('fs', 'file-sizes', 'file', 'sizes', 'search', 'special', 'optional'):
-        [topics['file-sizes']['name'], topics['file-sizes']['short'], topics['file-sizes']['long']]
+        [topics['file-sizes']['name'], topics['file-sizes']['short'], topics['file-sizes']['long']],
+
+    ('find-group', 'group', 'find', 'fg'):
+        [topics['find-group']['name'], topics['find-group']['short'], topics['find-group']['long']],
+    ('pc', 'path-contains', 'path', 'contains', 'find', 'special', 'optional'):
+        [topics['path-contains']['name'], topics['path-contains']['short'], topics['path-contains']['long']],
+    ('fc', 'filename-contains', 'filename', 'contains', 'find', 'special', 'optional'):
+        [topics['filename-contains']['name'],
+         topics['filename-contains']['short'], topics['filename-contains']['long']],
+    ('ec', 'extension-contains', 'extension', 'contains', 'find', 'special', 'optional'):
+        [topics['extension-contains']['name'],
+         topics['extension-contains']['short'], topics['extension-contains']['long']],
 }
 
 
