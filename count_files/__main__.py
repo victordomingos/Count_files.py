@@ -26,7 +26,8 @@ from typing import TypeVar, Union
 from pathlib import Path
 from textwrap import fill
 
-from count_files.utils.file_handlers import is_supported_filetype, get_pattern_substring_and_type, handle_groups
+from count_files.utils.file_handlers import is_supported_filetype, get_pattern_substring_and_type, \
+    get_find_group_values
 from count_files.utils.viewing_modes import show_2columns, show_start_message, \
     show_result_for_total, show_result_for_search_files
 from count_files.platforms import get_current_os
@@ -190,8 +191,9 @@ def main_flow(*args: [argparse_namespace_object, Union[bytes, str]]):
     # Parser find_group: search for any folder, file of extension name in path
     find_group_args = any([args.path_substring, args.filename_substring, args.extension_substring])
     if find_group_args:
-        kw = {'path': args.path_substring, 'filename': args.filename_substring, 'extension': args.extension_substring}
-        substring, where = handle_groups(kw)
+        where_and_substring = {'path': args.path_substring, 'filename': args.filename_substring,
+                               'extension': args.extension_substring}
+        substring, where = get_find_group_values(where_and_substring)
         pattern_type, substring = get_pattern_substring_and_type(substring)
         print(fill(show_start_message(value='..', group='find', contains=[substring, where, pattern_type], **common_args),
                    width=START_TEXT_WIDTH),

@@ -22,7 +22,7 @@ Sorting arguments by purpose:
 Service arguments: display of help, version of the program etc.
 (h or help, ah or args-help,
 v or version, st or supported-types,
-sp or search-patterns)
+fp or find-patterns)
 All service arguments.
     count-files --args-help service
 Get by name.
@@ -167,7 +167,7 @@ AVAILABLE SORT WORDS:
 SORTING ARGUMENTS BY PURPOSE:
 Service arguments: display of help, version of the program etc.
 (h or help, ah or args-help, v or version,
-st or supported-types, sp or search-patterns)
+st or supported-types, fp or find-patterns)
     count-files --args-help service
 Common arguments: directory path and sorting settings that are common to search and count.
 (path, a or all, c or case-sensitive, nr or no-recursion, nf or no-feedback)

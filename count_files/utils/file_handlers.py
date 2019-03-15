@@ -120,10 +120,11 @@ def check_pattern_matching(file_name: str, file_path: str, pattern_type: str,
     return result
 
 
-def handle_groups(kwargs: dict):
-    """
+def get_find_group_values(kwargs: dict):
+    """Get substring and where values for find group
 
-    :param kwargs:
+    :param kwargs: {'path': args.path_substring,
+    'filename': args.filename_substring, 'extension': args.extension_substring}
     :return: substring - find_group args value,
     where - 'path', 'filename', 'extension'
     """
