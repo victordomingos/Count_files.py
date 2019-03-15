@@ -466,12 +466,14 @@ topics = {
         'name': 'Find substring in a path, file name(excluding extension) or extension',
         'short': 'Displays the location of the files matching the search pattern. '
                  'Also --preview, --preview-size, --file-sizes arguments are available for this group. '
-                 'All arguments in the group are used separately from each other. '
+                 'Arguments --path-contains, --filename-contains and --extension-contains '
+                 'are used separately from each other. '
                  'Details: count-files --args-help find',
         'long': 'Find substring in a path, file name(excluding extension) or extension. '
                 'Displays the location of the files matching the search pattern, '
                 'full paths of the files found. '
-                'All arguments in the group are used separately from each other. '
+                'Arguments --path-contains, --filename-contains and --extension-contains '
+                'are used separately from each other. '
                 'Available search patterns: substring*, *substring, *substring* or simply substring '
                 '(startswith, endswith or contains substring). '
                 'Examples: count-files --path-contains tests <arguments>; '
