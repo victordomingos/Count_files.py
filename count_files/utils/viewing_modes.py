@@ -47,15 +47,16 @@ def human_mem_size(num: int, suffix: str = 'B') -> str:
 
 
 def show_start_message(value: [None, str], case_sensitive: bool, recursive: bool, include_hidden: bool,
-                       location: str, group: str = None) -> str:
+                       dirpath: str, group: str = None, contains: List[str] = None) -> str:
     """Displays a message with information about selected counting or searching CLI arguments.
 
     :param value: str for args.total or args.file_extension, for table - None.
     :param case_sensitive: args.case_sensitive
     :param recursive: args.no_recursion
     :param include_hidden: args.all
-    :param location: path argument
-    :param group: for now 'total' or None
+    :param dirpath: path argument
+    :param group: 'total', 'find' or None
+    :param contains: contains=[substring, where, pattern_type]
     :return: prints information message
     """
     wi = 'or without it'
@@ -69,6 +70,18 @@ def show_start_message(value: [None, str], case_sensitive: bool, recursive: bool
         nr = 'Counting total number of files'
         e = f' with{" (" + case + ")" if value not in [".", ".."] else ""} ' \
             f'extension {"." + value if value != ".." else wi}'
+    # search for any folder or file name in path
+    elif group == 'find':
+        if 'with' in contains[2]:
+            pt = contains[2].split('w')[0] + " with"
+        else:
+            pt = contains[2].split('s')[0]
+        r = f'Recursively searching for {contains[1]}s that {pt} the substring "{contains[0]}"'
+        nr = f'Searching for {contains[1]}s that {pt} the substring "{contains[0]}"'
+        c = f'{"(" + case + ")" if {case} else ""}'
+        message = f'{r if recursive else nr} {c},' \
+                  f'{h if include_hidden else nh}, in {dirpath}'
+        return message
     # count_group and search_group
     else:
         action = 'searching' if value else 'counting'
@@ -78,7 +91,7 @@ def show_start_message(value: [None, str], case_sensitive: bool, recursive: bool
             f'extension {"." + value if value != ".." else wi}' if value else ''
 
     message = f'{r if recursive else nr}{e if value != "." else all_e},' \
-              f'{h if include_hidden else nh}, in {location}'
+              f'{h if include_hidden else nh}, in {dirpath}'
 
     return message
 
